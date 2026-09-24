@@ -1,42 +1,40 @@
-# 2026 NUEDC H — MSPM0G3507 Ball-Balancing Control Firmware
+# 2026 年电赛 H 题：MSPM0G3507 滚球控制固件
 
-2026 年全国大学生电子设计竞赛 H 题滚球控制系统的 MCU 端固件。仓库整理范围是控制端 Q2–Q6：底盘行程、球位置控制、静态恢复、动态车球控制和任意起点目标保持。第 1 问属于独立视觉侧；本仓库只包含 MCU 侧 UART3 接收与视觉帧有效性处理，不包含视觉模块算法/固件。
+本项目是 2026 年全国大学生电子设计竞赛 H 题滚球控制系统的微控制器端固件，涵盖第 2 至第 6 问的控制功能。第 1 问属于独立视觉侧；本仓库包含微控制器端 UART3 接收与视觉帧有效性处理，不包含视觉模块算法或固件。
 
-This repository contains the MCU-side control firmware for the 2026 NUEDC H ball-balancing project. It covers the implemented Q2–Q6 control paths. The independent Q1 vision algorithm/firmware is out of scope; the MCU-side UART3 interface and frame validation are included.
+## 项目概览
 
-## Project at a glance
+- 微控制器：TI MSPM0G3507，采用裸机协作式主循环与定时器控制节拍。
+- 执行器：X42S 步进电机，使用 X 固件协议；底盘驱动与摆杆执行器为独立软件路径。
+- 应用层：`user/app/q3`、`user/app/q4`、`user/app/q6`；按键、显示与遥测适配模块位于 `user/app`；板级服务位于 `user/bsp`；设备驱动与协议代码位于 `user/code`。
+- `main.c` 负责系统启动、按键到模式的路由，以及原有关键任务的调用顺序。中断事件去抖、Q4/Q5/Q6 状态显示和周期诊断调度分别封装在 `user/app/app_key_input.*`、`user/app/app_status_display.*` 和 `user/app/app_telemetry.*`。
+- 外设配置以 `empty.syscfg` 为源；当前工程配置对应的 `ti_msp_dl_config.c/.h` 已纳入仓库，不应手工编辑。
+- 构建系统：CMake、Ninja 与 Arm GNU 工具链；提供 Debug 和 Release 预设。
 
-- MCU: TI MSPM0G3507, bare-metal cooperative main loop and timer-driven control tick.
-- Actuator: X42S stepper using the X firmware protocol; chassis drive and pendulum actuation are separate software paths.
-- Application layers: `user/app/q3`, `user/app/q4`, `user/app/q6`; foreground key, display and telemetry adapters in `user/app`; board services in `user/bsp`; device/protocol code in `user/code`.
-- `main.c` remains the composition root for startup, key-to-mode routing, and the original fast-path order. ISR-event debounce, Q4/Q5/Q6 status rendering, and periodic diagnostic cadence are isolated in `user/app/app_key_input.*`, `user/app/app_status_display.*`, and `user/app/app_telemetry.*`.
-- Configuration source: `empty.syscfg`; generated `ti_msp_dl_config.c/.h` are checked in for the current project setup and must not be hand-edited.
-- Build: CMake + Ninja + Arm GNU toolchain, with Debug and Release presets.
+## 固件功能
 
-## Capabilities in this firmware
-
-| Area | Code location | Scope |
+| 题目 | 代码位置 | 功能范围 |
 |---|---|---|
-| Q2 | `user/bsp/lap_trace.*`, `user/main.c` | Chassis lap/route exercise selected through the existing key path. |
-| Q3 | `user/app/q3/` | Ball-state estimation, position control, pendulum geometry/calibration, and the Q3 sequence. The control behavior and tuned values are preserved; source formatting is normalized. |
-| Q4 | `user/app/q4/q45_vehicle_control.*` | Static vehicle route and ball recovery/hold behavior. |
-| Q5 | `user/app/q4/q5_*`, `q45_vehicle_control.*` | Dynamic vehicle/ball control and motion-derived feedforward. |
-| Q6 | `user/app/q6/`, `q45_vehicle_control.*` | Capture the ball's stable starting position or accept an explicit target, then perform target-relative closed-loop control. |
-| Hardware/protocol | `user/code/`, `user/bsp/` | X42S, vision UART framing, keys, display, motor/encoder/gyro, clocks, and debug telemetry. |
+| 第 2 问 | `user/bsp/lap_trace.*`、`user/main.c` | 通过现有按键流程选择底盘绕行或路径运行任务。 |
+| 第 3 问 | `user/app/q3/` | 球状态估计、位置控制、摆杆几何与标定、第 3 问状态流程。控制行为与已调参数保持不变，仅规范源码格式。 |
+| 第 4 问 | `user/app/q4/q45_vehicle_control.*` | 静态底盘路径运行，以及滚球恢复与保持控制。 |
+| 第 5 问 | `user/app/q4/q5_*`、`q45_vehicle_control.*` | 动态底盘与滚球控制，以及由运动状态产生的前馈。 |
+| 第 6 问 | `user/app/q6/`、`q45_vehicle_control.*` | 捕获滚球稳定起始位置或接收显式目标，并进行相对目标的闭环控制。 |
+| 硬件与协议 | `user/code/`、`user/bsp/` | X42S、视觉串口帧、按键、显示、电机、编码器、陀螺仪、时钟与调试遥测。 |
 
-The Q4/Q5/Q6 vehicle controller shares a state machine. Q6-specific target capture and tuning are guarded in the Q6 path; this repository intentionally does not advertise a wholesale redesign of the validated Q3–Q5 control laws.
+第 4、5、6 问共用车辆控制状态机。第 6 问的目标捕获与专属调节由第 6 问路径隔离；本项目没有重写已经验证的第 3 至第 5 问控制律。
 
-The Q2 route and Q6 start currently share the PB24 input behind `Q6_TASK_ENABLE`: when Q6 is enabled PB24 requests Q6; when disabled the existing standalone Q2 path uses PB24. The codebase contains both paths, but this macro means they are not both selected by that key in the same configuration.
+第 2 问路径与第 6 问启动目前共用 PB24 输入，并由编译期宏 `Q6_TASK_ENABLE` 选择：启用第 6 问时，PB24 启动第 6 问；关闭时，PB24 进入原有独立第 2 问路径。因此同一固件配置下，这两个任务不会同时由该按键选择。
 
-Current source key map: PB21 stop, PB11 Q5, PB24 Q6/Q2 (compile-time selection), PA28 Q4, and PA31 Q3 zero/start flow. See [hardware notes](docs/hardware.md) before operating the board.
+当前源码中的按键对应关系：PB21 停止，PB11 选择第 5 问，PB24 选择第 6 问或第 2 问（由编译期配置决定），PA28 选择第 4 问，PA31 执行第 3 问归零或启动流程。上电与接线前请阅读[硬件说明](docs/hardware.md)。
 
-## Build prerequisites
+## 构建环境
 
-Install CMake 3.22 or newer, Ninja, and the Arm GNU toolchain. The current CMake presets are Windows-oriented. Set `ARM_GCC_ROOT` and `NINJA_ROOT` in the shell before configuring; the VS Code SysConfig helper also reads `MSPM0_SDK_ROOT` and `SYSCONFIG_ROOT` from a local `.env` file. Copy `.env.example` as a variable-name template; `.env` is ignored and must never be committed.
+安装 CMake 3.22 或更新版本、Ninja 与 Arm GNU 工具链。当前 CMake 预设面向 Windows。配置前在终端设置 `ARM_GCC_ROOT` 与 `NINJA_ROOT`；VS Code 的 SysConfig 辅助脚本还会从本地 `.env` 文件读取 `MSPM0_SDK_ROOT` 与 `SYSCONFIG_ROOT`。可参考 `.env.example` 中的变量名称；真实 `.env` 文件已忽略，不应提交。
 
-The optional serial capture utilities under `tools/` use pySerial. Install their pinned dependency with `python -m pip install -r tools/requirements.txt`; no vendored pySerial copy is part of the public source tree.
+`tools/` 下可选的串口采集工具使用 pySerial。可通过 `python -m pip install -r tools/requirements.txt` 安装固定版本依赖；公开源码中不包含 pySerial 副本。
 
-From a shell where those variables are available:
+在已设置上述环境变量的 PowerShell 中运行：
 
 ```powershell
 $env:ARM_GCC_ROOT = "C:\Toolchains\arm-gnu-toolchain"
@@ -45,32 +43,34 @@ cmake --preset debug-armgcc
 cmake --build --preset build-debug
 ```
 
-The project is Windows-oriented in its current CMake toolchain file. The commands above describe the checked-in build entrypoint. Q6 bench macros are distinct from the normal run configuration. Review `user/app/q6/q6_config.h` and the CMake cache before producing any image intended for hardware.
+当前 CMake 工具链文件面向 Windows。以上命令对应仓库内的构建入口。第 6 问台架宏与正常运行配置相互独立；生成用于实机的固件前，请检查 `user/app/q6/q6_config.h` 与 CMake 缓存。
 
-For the software regression harnesses, install the pinned Python emulator dependencies with `python -m pip install -r tests/requirements.txt --target build/testdeps`, then run the PowerShell runners listed in [testing and evidence](docs/testing.md). This does not exercise physical sensors, motors, wiring, or real-time timing.
+运行软件回归程序前，通过 `python -m pip install -r tests/requirements.txt --target build/testdeps` 安装固定版本的 Python 仿真依赖，再运行[测试与证据说明](docs/testing.md)中列出的 PowerShell 脚本。该流程不覆盖真实传感器、电机、接线或实时运行时序。
 
-## Hardware and safety
+## 硬件与安全
 
-The current SysConfig assigns UART0 to `PRINT` (PA0/PA1), UART1 to `DEBUG` (PB6/PB7), UART2 to `GYRO` (PA21/PA24), UART3 to `VISION` (PA25/PA26), and TIMG6 to `Timer_Control`. Consult [hardware notes](docs/hardware.md) and the board wiring before connecting external devices; generated names and actual physical wiring must agree. Do not infer pin responsibilities from old logs.
+当前 SysConfig 中，UART0 对应 `PRINT`（PA0/PA1），UART1 对应 `DEBUG`（PB6/PB7），UART2 对应 `GYRO`（PA21/PA24），UART3 对应 `VISION`（PA25/PA26），TIMG6 对应 `Timer_Control`。连接外设前请查阅[硬件说明](docs/hardware.md)，并核对板卡接线；生成配置中的外设名称必须与实际接线一致，不能根据旧日志推测端口职责。
 
-This firmware can move motors immediately after a start request. Keep the chassis mechanically supported, the ball path clear, and a physical power cutoff accessible. Never flash a bench auto-start image as a competition image.
+固件收到启动请求后可能立即驱动电机。测试时应固定底盘、保持滚球路径畅通，并确保物理断电手段可用。不要将带有台架自动启动配置的固件用于正式比赛。
 
-## Validation status
+## 验证状态
 
-The user reports Q5 and Q6 acceptance on hardware. In this audit, the four checked-in host runners passed (key input: 9 checks; telemetry: 14; Q5: 5,664; Q6 target and static-image harnesses: 235 and 39), and the Debug ARM image built successfully (Flash 100,968 / 131,072 bytes; SRAM 17,672 / 32,768 bytes). The exact accepted device image has not been linked to this source snapshot, and no flash or physical trial was performed during this audit. See [testing and evidence](docs/testing.md) for scope and caveats.
+用户报告第 5 问与第 6 问已通过实机验收。本次代码审计中，已运行的主机回归程序结果为：按键输入 9 项、遥测 14 项、第 5 问 5,664 项、第 6 问目标与静态镜像测试分别为 235 项和 39 项；Debug ARM 固件构建成功，Flash 使用量为 100,968 / 131,072 字节，SRAM 使用量为 17,672 / 32,768 字节。
 
-## Documentation
+目前尚未将已验收的实机固件与本仓库源码快照建立可追溯对应关系；本次审计也未重新烧录或进行实机试验。验证范围与限制见[测试与证据说明](docs/testing.md)。
 
-- [Architecture and module ownership](docs/architecture.md)
-- [Source and build baseline](docs/baseline.md)
-- [Hardware and peripheral ownership](docs/hardware.md)
-- [Control paths](docs/control-algorithm.md)
-- [Validation and evidence policy](docs/testing.md)
-- [Code style and formatting](docs/code-style.md)
-- [Debugging case studies](docs/debugging-case-studies.md)
-- [Known limitations](docs/known-limitations.md)
-- [Third-party notices](THIRD_PARTY_NOTICES.md)
+## 详细说明
 
-## Resume-ready project summary
+- [架构与模块职责](docs/architecture.md)
+- [源码与构建基线](docs/baseline.md)
+- [硬件与外设归属](docs/hardware.md)
+- [控制流程](docs/control-algorithm.md)
+- [测试与证据](docs/testing.md)
+- [代码风格与格式](docs/code-style.md)
+- [调试案例](docs/debugging-case-studies.md)
+- [已知限制](docs/known-limitations.md)
+- [第三方声明](THIRD_PARTY_NOTICES.md)
 
-Implemented and tuned a bare-metal MSPM0G3507 ball-balancing control system for the 2026 NUEDC H problem, integrating UART-based vision feedback, X42S stepper control, state estimation, target capture, and Q2–Q6 task flows. Specific performance claims should be added only with the corresponding dated logs and hardware conditions.
+## 项目经历简介
+
+围绕 2026 年电赛 H 题，实现并调试基于 MSPM0G3507 的滚球控制系统，集成视觉串口反馈、X42S 步进电机控制、状态估计、目标捕获与第 2 至第 6 问的控制流程。具体性能数据应与对应日期的日志和实机条件一起说明。
