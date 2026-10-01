@@ -52,10 +52,10 @@ TIMG6 / UART / GPIO 中断：时基、收发和事件采集；格式化日志留
 
 | 题目 | 演示内容 | 视频 |
 |---|---|---|
-| 第 3 问 | 静止状态下滚球按任务流程完成位置切换 | [▶ 查看 Q3 实机视频](docs/demo/q3_demo.mp4?raw=1) |
-| 第 4 问 | 第 4 问实机运行 | [▶ 查看 Q4 实机视频](docs/demo/q4_demo.mp4?raw=1) |
-| 第 5 问 | 第 5 问实机运行 | [▶ 查看 Q5 实机视频](docs/demo/q5_demo.mp4?raw=1) |
-| 第 6 问 | 第 6 问实机运行 | [▶ 查看 Q6 实机视频](docs/demo/q6_demo.mp4?raw=1) |
+| 第 3 问 | 静止状态下滚球按任务流程完成位置切换 | [▶ 浏览器直接播放 Q3](https://zejun051019.github.io/2026-NUEDC-H-MSPM0G3507/demo/#q3) |
+| 第 4 问 | 第 4 问实机运行 | [▶ 浏览器直接播放 Q4](https://zejun051019.github.io/2026-NUEDC-H-MSPM0G3507/demo/#q4) |
+| 第 5 问 | 第 5 问实机运行 | [▶ 浏览器直接播放 Q5](https://zejun051019.github.io/2026-NUEDC-H-MSPM0G3507/demo/#q5) |
+| 第 6 问 | 第 6 问实机运行 | [▶ 浏览器直接播放 Q6](https://zejun051019.github.io/2026-NUEDC-H-MSPM0G3507/demo/#q6) |
 
 ## 构建环境
 
