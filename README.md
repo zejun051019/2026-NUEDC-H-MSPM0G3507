@@ -46,6 +46,17 @@ TIMG6 / UART / GPIO 中断：时基、收发和事件采集；格式化日志留
 
 当前源码中的按键对应关系：PB21 停止，PB11 选择第 5 问，PB24 选择第 6 问或第 2 问（由编译期配置决定），PA28 选择第 4 问，PA31 执行第 3 问归零或启动流程。上电与接线前请阅读[硬件说明](docs/hardware.md)。
 
+## 实机演示视频
+
+以下为第 3 至第 6 问的实际硬件运行录像，便于快速查看整机运行效果。视频只作为实机演示证据；控制逻辑、代码位置与验证边界仍以上文源码说明和[测试与证据](docs/testing.md)为准。
+
+| 题目 | 演示内容 | 视频 |
+|---|---|---|
+| 第 3 问 | 静止状态下滚球按任务流程完成位置切换 | [▶ 查看 Q3 实机视频](docs/demo/q3_demo.mp4?raw=1) |
+| 第 4 问 | 第 4 问实机运行 | [▶ 查看 Q4 实机视频](docs/demo/q4_demo.mp4?raw=1) |
+| 第 5 问 | 第 5 问实机运行 | [▶ 查看 Q5 实机视频](docs/demo/q5_demo.mp4?raw=1) |
+| 第 6 问 | 第 6 问实机运行 | [▶ 查看 Q6 实机视频](docs/demo/q6_demo.mp4?raw=1) |
+
 ## 构建环境
 
 安装 CMake 3.22 或更新版本、Ninja 与 Arm GNU 工具链。当前 CMake 预设面向 Windows。配置前在终端设置 `ARM_GCC_ROOT` 与 `NINJA_ROOT`；VS Code 的 SysConfig 辅助脚本还会从本地 `.env` 文件读取 `MSPM0_SDK_ROOT` 与 `SYSCONFIG_ROOT`。可参考 `.env.example` 中的变量名称；真实 `.env` 文件已忽略，不应提交。
